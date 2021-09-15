@@ -18,6 +18,9 @@ class MetaCM(type):
                 if k not in attr_keys:
                     msg = f'属性"{k}"は宣言されていません。'
                     raise AttributeError(msg)
+                if kp.get(k, OtsuNone) is not OtsuNone:
+                    msg = f'属性"{k}"は異なるセクションに存在しています。'
+                    raise AttributeError(msg)
                 kp[k] = position
             if (undefined := attr_keys - set(kp.keys())):
                 msg = f'これらの属性の初期値が設定されていません。{undefined}'
@@ -98,12 +101,24 @@ class BaseCM(metaclass=MetaCM):
         if not self.__file__.exists():
             return
         kwargs['file'] = self.__file__
-        jsn = load_json(**kwargs)
+        try:
+            jsn = load_json(**kwargs)
+        except:
+            return
         if not isinstance(jsn, dict):
             msg = f'{self.__file__}は対応していない形式です。'
             raise TypeError(msg)
-        for k, v, p in get_dict_keys_position(jsn):
-            setattr(self, k, v)
+        jsn = cast(dict, jsn)
+        for key, places in self.key_place_cm().items():
+            d = jsn
+            if places is not None:
+                for p in places:
+                    d = d.get(p, OtsuNone)  # type: ignore
+                    if d is OtsuNone:
+                        continue
+            if (dk := d.get(key, OtsuNone)) is OtsuNone:  # type: ignore
+                continue
+            setattr(self, key, dk)
 
     def save_cm(self, **kwargs):
         """設定ファイルを書き出します。
@@ -139,6 +154,13 @@ class BaseCM(metaclass=MetaCM):
             dict: 各属性の初期値です。
         """
         return cast(dict, self.__defaults__)
+
+    def reset_cm(self):
+        """各属性を初期値に戻します。
+        """
+        dflt = lambda x: f'default_{x}_cm'
+        for key in self.attributes_cm():
+            setattr(self, key, getattr(self, dflt(key)))
 
     def user_cm(self) -> dict:
         """ユーザが変更した属性の辞書を返します。

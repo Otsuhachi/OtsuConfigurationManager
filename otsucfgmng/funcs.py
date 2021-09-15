@@ -44,7 +44,9 @@ def get_dict_keys_position(dict_: dict, *, position: Optional[list] = None) -> G
 
 
 def support_json_dump(o: Any):
-    """JSONで変換できないオブジェクトをstrとして出力します。
+    """JSONで変換できないオブジェクトをstrとして返します。
+
+    to_jsonメソッドを定義していればそちらを優先して使用します。
 
     Args:
         o (Any): JSONで変換できないオブジェクトです。
@@ -52,4 +54,6 @@ def support_json_dump(o: Any):
     Returns:
         str: str(o)です。
     """
+    if hasattr(o, 'to_json'):
+        return o.to_json()
     return str(o)
