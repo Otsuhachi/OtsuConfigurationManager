@@ -1,15 +1,19 @@
+import copy
+import json
+
 from pathlib import Path
-from typing import Any, Union, cast
+from typing import Any, List, Union, cast
 
 from otsutil import OtsuNone, load_json, save_json
 from otsuvalidator import CPath
+from otsuvalidator.validators import VTuple
 
 from .funcs import get_dict_keys_position, support_json_dump
 
 
 class MetaCM(type):
     def __new__(cls, name: str, bases: tuple, attrs: dict):
-        excludes = {'__module__', '__qualname__', '__defaults__'}
+        excludes = {'__module__', '__qualname__', '__defaults__', '__hidden_options__'}
         attr_keys = set(attrs.keys()) - excludes
         if (dflt := attrs.get('__defaults__', OtsuNone)) is not OtsuNone:
             dflt = cast(dict, dflt)
@@ -39,6 +43,7 @@ class BaseCM(metaclass=MetaCM):
     拡張子に制約はありませんが、読み込んだ際に辞書形式のjsonである必要があります。
     """
     __file__ = CPath()
+    __hidden_options__ = VTuple(str)
 
     def __enter__(self):
         return self
@@ -90,6 +95,40 @@ class BaseCM(metaclass=MetaCM):
                 raise AttributeError(msg)
         super().__setattr__(name, value)
 
+    def cfg_to_str_cm(self, all: bool = False) -> str:
+        """設定をjson.dumpsして返します。
+
+        self.__hidden_options__はユーザが変更している場合のみ表示されます。
+
+        allが有効の場合、defaults, userという2つのセクションからなる辞書として扱われます。
+
+        Args:
+            all (bool, optional): 標準設定を表示するかどうかです。
+
+        Returns:
+            str: 設定の文字列です。
+        """
+        if all:
+            tmp = {'defaults': copy.deepcopy(self.defaults_cm()), 'user': self.user_cm()}
+            kp = cast(dict, self.key_place_cm())
+            if (ho := getattr(self, '__hidden_options__', OtsuNone)) is not OtsuNone:
+                ho = set(cast(tuple, ho))
+                for key in ho:
+                    if (place := kp.get(key, OtsuNone)) is OtsuNone:
+                        continue
+                    dflt = tmp['defaults']
+                    user = tmp['user']
+                    if place is not None:
+                        place = cast(List[str], place)
+                        for p in place:
+                            dflt = dflt[p]
+                            user = user[p]
+                    if user.get(key, OtsuNone) is OtsuNone:
+                        del dflt[key]
+        else:
+            tmp = self.user_cm()
+        return json.dumps(tmp, indent=4, ensure_ascii=False, default=support_json_dump, sort_keys=True)
+
     def load_cm(self, **kwargs):
         """設定ファイルを読み込みます。
 
@@ -133,27 +172,16 @@ class BaseCM(metaclass=MetaCM):
         encoding: utf-8
         ensure_ascii: False
         default: support_json_dump
+        sort_keys: True
         """
         user = self.user_cm()
         kwargs['file'] = self.__file__
         kwargs['data'] = user
-        set_kwargs = (
-            ('indent', 4),
-            ('ensure_ascii', False),
-            ('default', support_json_dump),
-        )
+        set_kwargs = (('indent', 4), ('ensure_ascii', False), ('default', support_json_dump), ('sort_keys', True))
         for k, v in set_kwargs:
             if kwargs.get(k, OtsuNone) is OtsuNone:
                 kwargs[k] = v
         save_json(**kwargs)
-
-    def defaults_cm(self) -> dict:
-        """各属性の初期値の辞書を返します。
-
-        Returns:
-            dict: 各属性の初期値です。
-        """
-        return cast(dict, self.__defaults__)
 
     def reset_cm(self):
         """各属性を初期値に戻します。
@@ -161,6 +189,14 @@ class BaseCM(metaclass=MetaCM):
         dflt = lambda x: f'default_{x}_cm'
         for key in self.attributes_cm():
             setattr(self, key, getattr(self, dflt(key)))
+
+    def defaults_cm(self) -> dict:
+        """各属性の初期値の辞書を返します。
+
+        Returns:
+            dict: 各属性の初期値です。
+        """
+        return copy.deepcopy(cast(dict, self.__defaults__))
 
     def user_cm(self) -> dict:
         """ユーザが変更した属性の辞書を返します。
@@ -185,14 +221,6 @@ class BaseCM(metaclass=MetaCM):
                 u[k] = uv
         return user
 
-    def attributes_cm(self) -> set:
-        """クラス定義の属性名セットです。
-
-        Returns:
-            set: クラス定義の属性名セットです。
-        """
-        return cast(set, self.__attr_keys__)
-
     def key_place_cm(self) -> dict:
         """各属性の保存先を記録する辞書です。
 
@@ -200,3 +228,11 @@ class BaseCM(metaclass=MetaCM):
             dict: 各属性の保存先を記録する辞書です。
         """
         return cast(dict, self.__key_place__)
+
+    def attributes_cm(self) -> set:
+        """クラス定義の属性名セットです。
+
+        Returns:
+            set: クラス定義の属性名セットです。
+        """
+        return cast(set, self.__attr_keys__)
