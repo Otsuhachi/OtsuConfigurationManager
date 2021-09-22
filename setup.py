@@ -9,7 +9,7 @@ with open('LICENSE.txt', 'r', encoding='utf-8') as f:
 info = sys.version_info
 setup(
     name='otsucfgmng',
-    version='1.2.0',
+    version='1.2.1',
     url='https://github.com/Otsuhachi/OtsuConfigurationManager.git',
     description='設定ファイルを扱うクラスを生成するライブラリ',
     long_description_content_type='text/markdown',
