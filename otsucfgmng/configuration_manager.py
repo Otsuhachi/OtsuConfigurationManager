@@ -154,7 +154,9 @@ class BaseCM(metaclass=MetaCM):
                 for p in places:
                     d = d.get(p, OtsuNone)  # type: ignore
                     if d is OtsuNone:
-                        continue
+                        jsctn = '->'.join(places)
+                        msg = f'{jsctn}が発見できませんでした。{self.__file__}が正しい形式の設定ファイルか確認してください。'
+                        raise KeyError(msg)
             if (dk := d.get(key, OtsuNone)) is OtsuNone:  # type: ignore
                 continue
             setattr(self, key, dk)
