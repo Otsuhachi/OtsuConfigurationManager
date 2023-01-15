@@ -4,12 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-otsuvalidator = "*"
 otsutil = "*"
+otsuvalidator = "*"
 
 [dev-packages]
+black = "*"
 flake8 = "*"
-yapf = "*"
 
 [requires]
-python_version = "3.9"
+python_version = "3.11"
