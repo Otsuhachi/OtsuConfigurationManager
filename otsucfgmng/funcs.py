@@ -55,10 +55,10 @@ def support_json_dump(o: Any) -> str:
     to_jsonメソッドを定義していればそちらを優先して使用します。
 
     Args:
-        o (Any): JSONで変換できないオブジェクトです。
+        o (Any): JSONで変換できないオブジェクト。
 
     Returns:
-        str: str(o)です。
+        str: str(o)。
     """
     if hasattr(o, "to_json"):
         return o.to_json()
