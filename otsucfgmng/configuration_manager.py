@@ -8,7 +8,7 @@ import copy
 import json
 
 from pathlib import Path
-from typing import Any, NoReturn, Self, cast
+from typing import Any, List, NoReturn, cast
 
 from otsutil import OtsuNone, load_json, pathLike, save_json
 from otsuvalidator import CPath
@@ -18,10 +18,11 @@ from .funcs import get_dict_keys_position, support_json_dump
 
 
 class __MetaCM(type):
-    def __new__(cls, name: str, bases: tuple, attrs: dict) -> Self:
+    def __new__(cls, name: str, bases: tuple, attrs: dict):
         excludes = {"__module__", "__qualname__", "__defaults__", "__hidden_options__", "__annotations__"}
         attr_keys = set(attrs.keys()) - excludes
-        if (dflt := attrs.get("__defaults__", OtsuNone)) is not OtsuNone:
+        dflt = attrs.get("__defaults__", OtsuNone)
+        if dflt is not OtsuNone:
             dflt = cast(dict, dflt)
             kp: dict = {}
             for k, v, position in get_dict_keys_position(dflt):
@@ -32,7 +33,8 @@ class __MetaCM(type):
                     msg = f'属性"{k}"は異なるセクションに存在しています。'
                     raise AttributeError(msg)
                 kp[k] = position
-            if undefined := attr_keys - set(kp.keys()):
+            undefined = attr_keys - set(kp.keys())
+            if undefined:
                 msg = f"これらの属性の初期値が設定されていません。{undefined}"
                 raise AttributeError(msg)
             attrs["__attr_keys__"] = attr_keys
@@ -53,7 +55,7 @@ class BaseCM(metaclass=__MetaCM):
     __hidden_options__ = VTuple(str)
     __export_default_config__ = VBool()
 
-    def __enter__(self) -> Self:
+    def __enter__(self):
         return self
 
     def __exit__(self, *ex) -> bool:
@@ -80,7 +82,8 @@ class BaseCM(metaclass=__MetaCM):
         for k in self.attributes_cm:
             d = dflt
             u = cfu
-            if (place := kp[k]) is not None:
+            place = kp[k]
+            if place is not None:
                 for p in place:
                     d = d[p]
                     if u.get(p, OtsuNone) is OtsuNone:
@@ -124,15 +127,17 @@ class BaseCM(metaclass=__MetaCM):
         if all:
             tmp = {"defaults": copy.deepcopy(self.defaults_cm()), "user": self.user_cm()}
             kp = cast(dict, self.key_place_cm)
-            if (ho := getattr(self, "__hidden_options__", OtsuNone)) is not OtsuNone:
+            ho = getattr(self, "__hidden_options__", OtsuNone)
+            if ho is not OtsuNone:
                 ho = set(cast(tuple, ho))
                 for key in ho:
-                    if (place := kp.get(key, OtsuNone)) is OtsuNone:
+                    place = kp.get(key, OtsuNone)
+                    if place is OtsuNone:
                         continue
                     dflt = tmp["defaults"]
                     user = tmp["user"]
                     if place is not None:
-                        place = cast(list[str], place)
+                        place = cast(List[str], place)
                         for p in place:
                             dflt = dflt[p]
                             user = user[p]
@@ -170,7 +175,8 @@ class BaseCM(metaclass=__MetaCM):
                         jsctn = "->".join(places)
                         msg = f"{jsctn}が発見できませんでした。{self.__file__}が正しい形式の設定ファイルか確認してください。"
                         raise KeyError(msg)
-            if (dk := d.get(key, OtsuNone)) is OtsuNone:  # type: ignore
+            dk = d.get(key, OtsuNone)  # type: ignore
+            if dk is OtsuNone:
                 continue
             setattr(self, key, dk)
 

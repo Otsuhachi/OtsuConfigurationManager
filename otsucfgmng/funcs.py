@@ -4,10 +4,10 @@ __all__ = (
     "support_json_dump",
 )
 
-from typing import Any, Iterator
+from typing import Any, Iterator, Optional, Tuple
 
 
-def get_dict_keys_position(dict_: dict, *, position: list | None = None) -> Iterator[tuple[Any, Any, list | None]]:
+def get_dict_keys_position(dict_: dict, *, position: Optional[list] = None) -> Iterator[Tuple[Any, Any, Optional[list]]]:
     """辞書のキー、値、辞書内の位置を返します。
 
     値が辞書の場合、positionにはキーの名前が格納され、階層を示します。
@@ -15,10 +15,10 @@ def get_dict_keys_position(dict_: dict, *, position: list | None = None) -> Iter
 
     Args:
         dict_ (dict): キーの階層を取得したい辞書。
-        position (list | None, optional): 辞書内の階層。 Defaults to None.
+        position (Optional[list], optional): 辞書内の階層。 Defaults to None.
 
     Yields:
-        Iterator[tuple[Any, Any, list | None]]: (キー, 値, 階層)のタプル。
+        Iterator[Tuple[Any,Any,Optional[list]]]: (キー, 値, 階層)のタプル。
 
     Examples:
         >>> dict_ = {
@@ -55,10 +55,10 @@ def support_json_dump(o: Any) -> str:
     to_jsonメソッドを定義していればそちらを優先して使用します。
 
     Args:
-        o (Any): JSONで変換できないオブジェクトです。
+        o (Any): JSONで変換できないオブジェクト。
 
     Returns:
-        str: str(o)です。
+        str: str(o)。
     """
     if hasattr(o, "to_json"):
         return o.to_json()
