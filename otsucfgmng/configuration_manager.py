@@ -19,7 +19,14 @@ from .funcs import get_dict_keys_position, support_json_dump
 
 class __MetaCM(type):
     def __new__(cls, name: str, bases: tuple, attrs: dict) -> Self:
-        excludes = {"__module__", "__qualname__", "__defaults__", "__hidden_options__", "__annotations__"}
+        excludes = {
+            "__module__",
+            "__qualname__",
+            "__defaults__",
+            "__hidden_options__",
+            "__annotations__",
+            "__doc__",
+        }
         attr_keys = set(attrs.keys()) - excludes
         if (dflt := attrs.get("__defaults__", OtsuNone)) is not OtsuNone:
             dflt = cast(dict, dflt)
