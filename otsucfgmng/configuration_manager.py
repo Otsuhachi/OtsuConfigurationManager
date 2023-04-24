@@ -247,7 +247,7 @@ class BaseCM(metaclass=__MetaCM):
             if position is not None:
                 for p in position:
                     u = u[p]
-            if not include_default_config and uv == dv:
+            if (not include_default_config or k in self.__hidden_options__) and uv == dv:
                 if u.get(k, OtsuNone) is not OtsuNone:
                     del u[k]
             else:
