@@ -239,6 +239,8 @@ class BaseCM(metaclass=__MetaCM):
         """
         user = cast(dict, self.__user__)
         place = self.key_place_cm
+        ho = getattr(self, "__hidden_options__", OtsuNone)
+        checker = lambda x: x in ho if ho is not OtsuNone else False
         for k in self.attributes_cm:
             uv = getattr(self, k)
             dv = getattr(self, f"default_{k}_cm")
@@ -247,7 +249,7 @@ class BaseCM(metaclass=__MetaCM):
             if position is not None:
                 for p in position:
                     u = u[p]
-            if (not include_default_config or k in self.__hidden_options__) and uv == dv:
+            if (not include_default_config or checker(k)) and uv == dv:
                 if u.get(k, OtsuNone) is not OtsuNone:
                     del u[k]
             else:
