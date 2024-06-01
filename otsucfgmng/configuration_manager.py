@@ -112,7 +112,7 @@ class BaseCM(metaclass=__MetaCM):
         super().__setattr__(name, value)
 
     @property
-    def attributes_cm(self) -> set:
+    def attributes_cm(self) -> set[str]:
         """クラス定義の属性名セット。"""
         return copy.deepcopy(self.__attr_keys__)
 
