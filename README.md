@@ -3,6 +3,7 @@
   - [使い方](#使い方)
   - [メソッド一覧](#メソッド一覧)
   - [Q\&A](#qa)
+  - [プロトコル](#プロトコル)
 
 
 # 概要
@@ -14,7 +15,7 @@
 **対応しないことに決定しました。**([理由はこちら](#なぜ異なるセクションで同名キーを持てないようにしましたか？))  
 
 このライブラリは以下の環境で作成されています。
-`Windows10(64bit)`, `Python3.11.1`
+`Windows10(64bit)`, `Python3.11.4`
 
 ```python
 # 違うセクションに同じキーを持つ例
@@ -578,4 +579,187 @@ None
 ---------------------------------------------------------------------------
 chief
 None
+```
+
+## プロトコル
+
+コーディングの最中、docstringが欲しくなった時の場合のために`otsucfgmng.protocol.PBaseCM`(以後、`PBaseCM`)があります。  
+
+<!-- omit in toc -->
+### 使い方-プロトコル
+[ここ](#作成-設定ファイル管理クラス)で定義した`ConfigurationManager`クラスのプロトコルを作成して利用する例を示します。  
+
+設定ファイルのパスは一度決めてしまえば不変である可能性が高いので、引数無しで`ConfigurationManager`インスタンスを生成して返す関数を作成します。
+
+
+1. `ConfigurationManager`と`PBaseCM`, `型ヒントに使用するクラス`をインポートする。
+1. `PBaseCM`を継承した`PConfigurationManager`クラスを定義する。
+   1. プロパティとして各属性を定義していく。
+   1. 必要であれば、常に各属性の初期値を返す`default_<attribute>_cm`も同様に定義していく。
+   1. コーディング中の警告が気になるなら`2.i`で定義したプロパティのセッターも定義しておく。
+1. インスタンス生成用関数を定義する。
+   1. `PConfigurationManager`を返り値の型として指定する。
+   1. `ConfigurationManager`インスタンスを生成し、返す。
+   1. 厳密には対応していないと警告されるので、気になるなら`# type: ignore`で無視するようにする。
+
+```python
+
+# 1.
+from pathlib import Path
+from typing import Any
+
+from otsucfgmng import PBaseCM
+from test2 import ConfigurationManager
+
+
+# 2.
+class PConfigurationManager(PBaseCM):
+    # 2.1
+    @property
+    def library(self) -> Path:
+        """外部ライブラリのパス。"""
+        ...
+
+    @property
+    def scripts(self) -> Path:
+        """外部スクリプトのパス。"""
+        ...
+
+    @property
+    def title(self) -> str:
+        """アプリケーションのタイトル。"""
+        ...
+
+    @property
+    def fullscreen(self) -> bool:
+        """フルスクリーンで起動するか。"""
+        ...
+
+    @property
+    def bgm(self) -> int:
+        """BGM音量。"""
+        ...
+
+    @property
+    def bgs(self) -> int:
+        """BGS音量。"""
+        ...
+
+    @property
+    def se(self) -> int:
+        """SE音量。"""
+        ...
+
+    @property
+    def me(self) -> int:
+        """ME音量。"""
+        ...
+
+    # 2.2
+    @property
+    def default_library_cm(self) -> Path:
+        """外部ライブラリのパス。"""
+        ...
+
+    @property
+    def default_scripts_cm(self) -> Path:
+        """外部スクリプトのパス。"""
+        ...
+
+    @property
+    def default_title_cm(self) -> str:
+        """アプリケーションのタイトル。"""
+        ...
+
+    @property
+    def default_fullscreen_cm(self) -> bool:
+        """フルスクリーンで起動するか。"""
+        ...
+
+    @property
+    def default_bgm_cm(self) -> int:
+        """BGM音量。"""
+        ...
+
+    @property
+    def default_bgs_cm(self) -> int:
+        """BGS音量。"""
+        ...
+
+    @property
+    def default_se_cm(self) -> int:
+        """SE音量。"""
+        ...
+
+    @property
+    def default_me_cm(self) -> int:
+        """ME音量。"""
+        ...
+
+    # 2.3
+    @library.setter
+    def library(self, value: Any) -> None: ...
+
+    @scripts.setter
+    def scripts(self, value: Any) -> None: ...
+
+    @title.setter
+    def title(self, value: Any) -> None: ...
+
+    @fullscreen.setter
+    def fullscreen(self, value: Any) -> None: ...
+
+    @bgm.setter
+    def bgm(self, value: Any) -> None: ...
+
+    @bgs.setter
+    def bgs(self, value: Any) -> None: ...
+
+    @se.setter
+    def se(self, value: Any) -> None: ...
+
+    @me.setter
+    def me(self, value: Any) -> None: ...
+
+
+# 3.
+def CfgMng() -> PConfigurationManager:  # 3.1
+    # 3.2, 3.3
+    return ConfigurationManager("cfg.json", True)  # type: ignore
+
+
+with CfgMng() as cm:
+    # "cm."まで入力した時点で、各属性のdocstring付き候補が表示されるようになる。
+    cm.bgm = 10  # 2.iを省略すると警告される。
+    print(cm.cfg_to_str_cm(True))
+
+```
+
+出力
+```json
+
+### 出力は以下のようになります ###
+{
+    "defaults": {
+        "app": {
+            "fullscreen": false,
+            "library": "SampleLibrary.dll",
+            "scripts": "SampleScripts.scrpt",
+            "title": "Sample Program"
+        },
+        "audio": {
+            "bgm": 100,
+            "bgs": 100,
+            "me": 85,
+            "se": 100
+        }
+    },
+    "user": {
+        "app": {},
+        "audio": {
+            "bgm": 10
+        }
+    }
+}
+
 ```
