@@ -1,65 +1,62 @@
-"""設定ファイル管理クラスで使用する関数を纏めたモジュール。"""
-
 __all__ = (
     "get_dict_keys_places",
+    "is_support_json_dump",
     "support_json_dump",
 )
 
-from typing import Any, Iterator
+
+from collections.abc import Iterator
+from typing import Any, TypeGuard
+
+from .protocol import PSupportJsonDump
 
 
-def get_dict_keys_places(dict_: dict[str, Any], *, position: list[str] | None = None) -> Iterator[tuple[str, Any, list[str] | None]]:
-    """辞書のキー、値、辞書内の位置を返す。
-
-    値が辞書の場合、positionにはキーの名前が格納され、階層を示します。
-    値が辞書以外の場合、positionはNoneになります。
+def get_dict_keys_places(
+    dict_: dict[str, Any],
+    *,
+    position: list[str] | None = None,
+) -> Iterator[tuple[str, Any, list[str] | None]]:
+    """ネストされた辞書を走査し、キー、値、およびその階層パスをジェネレータとして返します。
 
     Args:
-        dict_ (dict[str, Any]): 辞書。
-        position (list[str] | None, optional): 辞書内の階層。 Defaults to None.
+        dict_: 走査対象の辞書。
+        position: 現在の階層パスを示す文字列リスト。内部計算用。
 
     Yields:
-        Iterator[tuple[str, Any, list[str] | None]]: (キー, 値, 階層)のタプル。
-
-    Examples:
-        >>> dict_ = {
-        ...     "name": "Otsuhachi",
-        ...     "data": {
-        ...         "age": 28,
-        ...         "H_W": {
-        ...             "height": 167,
-        ...             "weight": 81,
-        ...         },
-        ...     },
-        ... }
-        >>> for kvp in get_dict_keys_places(dict_):
-        ...     print(kvp)
-        ...
-        ("name", "Otsuhachi", None)
-        ("age", 28, ["data"])
-        ("height", 167, ["data", "H_W"])
-        ("weight", 81, ["data", "H_W"])
+        Iterator[tuple[str, Any, list[str] | None]]: (キー, 値, 階層パスのリスト) のタプル。
     """
+    position = position or []
     for k, v in dict_.items():
         if isinstance(v, dict):
-            if position is None:
-                position = []
             yield from get_dict_keys_places(v, position=position + [k])
         else:
-            yield (k, v, position)
+            yield (k, v, position if position else None)
 
 
-def support_json_dump(o: Any) -> str:
-    """JSONで変換できないオブジェクトをstrとして返す。
-
-    to_jsonメソッドを定義していればそちらを優先して使用します。
+def is_support_json_dump(value: Any) -> TypeGuard[PSupportJsonDump]:
+    """指定された値が `to_json` メソッドを持つJSONシリアライズ可能オブジェクトか判定します。
 
     Args:
-        o (Any): JSONで変換できないオブジェクト。
+        value: 判定対象の値。
 
     Returns:
-        str: str(o)。
+        TypeGuard[PSupportJsonDump]: `to_json` メソッドを保持し呼び出し可能な場合はTrue。
     """
-    if hasattr(o, "to_json"):
+    to_json = getattr(value, "to_json", None)
+    if to_json is None:
+        return False
+    return callable(to_json)
+
+
+def support_json_dump(o: Any) -> str | Any:
+    """`json.dumps` の `default` 引数に渡すシリアライズ関数。
+
+    Args:
+        o: 変換対象のオブジェクト。
+
+    Returns:
+        str | Any: `to_json` を持つ場合はその実行結果、持たない場合は文字列化された値。
+    """
+    if is_support_json_dump(o):
         return o.to_json()
     return str(o)

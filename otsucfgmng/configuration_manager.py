@@ -1,15 +1,14 @@
-"""設定ファイルの生成、管理を助けるクラスを定義したモジュール。
-"""
-
 __all__ = ("BaseCM",)
+
+
 import copy
 import json
-
 from pathlib import Path
 from typing import Any, NoReturn, Self
 
-from otsutil import OtsuNone, load_json, pathLike, save_json
 from otsuvalidator import CPath, VBool, VTuple
+
+from otsutil import OtsuNone, StrPath, load_json, save_json
 
 from .funcs import get_dict_keys_places, support_json_dump
 
@@ -29,44 +28,46 @@ class __MetaCM(type):
             kp = {}
             for k, _, places in get_dict_keys_places(dflt):
                 if k not in attr_keys:
-                    msg = f'"{k}"属性は宣言されていません。'
+                    msg = f"'{k}'属性は宣言されていません。"
                     raise AttributeError(msg)
                 if kp.get(k, OtsuNone) is not OtsuNone:
-                    msg = f'"{k}"属性は異なるセクションで宣言されています。'
+                    msg = f"'{k}'属性は異なるセクションで宣言されています。"
                     raise AttributeError(msg)
                 kp[k] = places
             if undefined := attr_keys - set(kp.keys()):
-                msg = "属性の初期値が設定されていません。({})".format(", ".join(undefined))
+                msg = "属性の初期値が設定されていません（{}）".format(", ".join(undefined))
                 raise AttributeError(msg)
             attrs["__attr_keys__"] = attr_keys
             attrs["__key_place__"] = kp
-            attrs["__user__"] = {}
         return super().__new__(cls, name, bases, attrs)
 
 
 class BaseCM(metaclass=__MetaCM):
-    """設定ファイル管理クラス用の基底クラス。
+    """設定ファイルを管理するベースクラス。
 
-    このクラスを継承したクラスに__defaults__, <attribute>を定義するだけで、設定ファイルの読み書きに必要な処理を行えるようになります。
+    メタクラス `__MetaCM` によって宣言された属性と `__defaults__` の不整合を検証し、
+    バリデーション・自動保存・ロード機能を統合管理します。
 
-    拡張子に制約はありませんが、読み込んだ際に辞書形式のjsonである必要があります。
+    Args:
+        file: 設定ファイルの保存先パス。
+        export_default_config: コンテキスト終了時にデフォルト設定も出力するかどうか。
     """
 
     __file__ = CPath(path_type=Path.is_file)
     __hidden_options__ = VTuple(str)
     __export_default_config__ = VBool()
 
-    def __init__(self, file: pathLike, export_default_config: bool = False) -> None:
-        """設定ファイルを指定して扱えるようにする。
+    def __init__(self, file: StrPath, export_default_config: bool = False) -> None:
+        """BaseCMのインスタンスを初期化し、初期値の設定およびファイルの読み込みを行います。
 
         Args:
-            file (pathLike): 設定ファイルのパス。
-            export_default_config (bool, optional): 設定ファイルを書き出す際、デフォルトと同じ値も書き出すかどうか。 Defaults to False.
+            file: 設定ファイルの保存先パス。
+            export_default_config: コンテキスト終了時にデフォルト設定も出力するかどうか。
         """
-        self.__file__ = file
+        setattr(self, "__file__", file)
         self.__export_default_config__ = export_default_config
         dflt = self.defaults_cm()
-        cfu: dict = self.__user__
+        self.__user__ = cfu = {}
         kp = self.key_place_cm
         for k in self.attributes_cm:
             d = dflt
@@ -78,63 +79,103 @@ class BaseCM(metaclass=__MetaCM):
                         u[p] = {}
                     u = u[p]
             setattr(self, k, d[k])
-            setattr(self, f"default_{k}_cm", getattr(self, k))
+            validated_val = getattr(self, k)
+            setattr(self, f"default_{k}_cm", validated_val)
+            d[k] = validated_val
+        self.__defaults__ = dflt
         self.load_cm()
 
     def __enter__(self) -> Self:
+        """コンテキストマネージャの開始処理。
+
+        Returns:
+            Self: 自身のインスタンス。
+        """
         return self
 
     def __exit__(self, *ex) -> bool:
+        """コンテキストマネージャの終了処理。設定をファイルに書き出します。
+
+        Args:
+            *ex: 例外情報。
+
+        Returns:
+            bool: 例外なく処理が完了したか、例外が処理された場合はTrue。
+        """
         try:
             self.save_cm(self.__export_default_config__)
             if any(ex):
                 return False
             return True
-        except:
+        except Exception:
             return False
 
     def __getattr__(self, key: str) -> NoReturn:
-        msg = f'"{key}"属性は存在しません。'
+        """未定義の属性にアクセスした場合にAttributeErrorを発生させます。
+
+        Args:
+            key: アクセスを試みた属性名。
+
+        Returns:
+            NoReturn: 常にAttributeErrorを発生させます。
+
+        Raises:
+            AttributeError: 指定された属性が存在しない場合。
+        """
+        msg = f"'{key}'属性は存在しません。"
         raise AttributeError(msg)
 
     def __setattr__(self, name: str, value: Any) -> None:
+        """属性値の設定を行います。`default_<属性名>_cm` 形式の初期値属性への直接上書きを制御します。
+
+        Args:
+            name: 属性名。
+            value: 設定する値。
+
+        Raises:
+            AttributeError: 上書き禁止の初期値属性を変更しようとした場合、または無効な初期値属性へアクセスした場合。
+        """
         nsp = name.split("_")
         if nsp[0] == "default" and nsp[-1] == "cm":
             _, *n, _ = nsp
-            n = "_".join(n)
-            if getattr(self, n, OtsuNone) is not OtsuNone:
+            n_str = "_".join(n)
+            if getattr(self, n_str, OtsuNone) is not OtsuNone:
                 if self.__dict__.get(name, OtsuNone) is not OtsuNone:
-                    msg = f'"{name}"属性は上書きできません。'
+                    msg = f"'{name}'属性は上書きできません。"
                     raise AttributeError(msg)
             else:
-                msg = f'"{n}"属性が存在しないため、その初期値を表す"{name}"属性も存在しません。'
+                msg = f"'{n_str}'属性が存在しないため、その初期値を表す'{name}'属性も存在しません。"
                 raise AttributeError(msg)
         super().__setattr__(name, value)
 
     @property
     def attributes_cm(self) -> set[str]:
-        """クラス定義の属性名セット。"""
-        return copy.deepcopy(self.__attr_keys__)
+        """設定項目として定義されている属性名の集合のディープコピーを取得します。
+
+        Returns:
+            set[str]: 属性名のセット。
+        """
+        return copy.deepcopy(getattr(self, "__attr_keys__", set()))
 
     @property
     def key_place_cm(self) -> dict[str, list[str] | None]:
-        """各属性の保存先を記録する辞書。"""
-        return copy.deepcopy(self.__key_place__)
-
-    def cfg_to_str_cm(self, all: bool = False) -> str:
-        """設定をjson.dumpsして返す。
-
-        self.__hidden_options__に登録されている属性はユーザが変更している場合のみ表示されます。
-
-        allが有効の場合、defaults, userという二つのセクションからなる辞書として扱われます。
-
-        Args:
-            all (bool, optional): 標準設定を含めるか。 Defaults to False.
+        """各設定属性の辞書構造における階層パス情報を取得します。
 
         Returns:
-            str: 設定の文字列。
+            dict[str, list[str] | None]: 属性名をキー、階層パスのリスト（またはNone）を値とする辞書。
         """
-        if all:
+        return copy.deepcopy(getattr(self, "__key_place__", {}))
+
+    def cfg_to_str_cm(self, all_: bool = False) -> str:
+        """現在の設定内容を整形されたJSON文字列に変換します。
+
+        Args:
+            all_: Trueの場合、デフォルト値とユーザー変更値の両方を含んだ文字列を返します。
+
+        Returns:
+            str: JSONフォーマット文字列。
+        """
+        if all_:
             tmp = {
                 "defaults": copy.deepcopy(self.defaults_cm()),
                 "user": self.user_cm(),
@@ -164,23 +205,21 @@ class BaseCM(metaclass=__MetaCM):
         )
 
     def load_cm(self, **kwargs) -> None:
-        """設定ファイルを読み込む。
+        """設定ファイルからデータを読み込み、対応する属性へ値を反映します。
 
-        読み込んだ設定を基にインスタンスの属性を更新します。
+        Args:
+            **kwargs: load_jsonに引き渡すオプション引数。
 
         Raises:
-            TypeError: self.__file__が辞書形式のjsonでない場合。
-            KeyError: 必要な階層が存在しない場合。
+            TypeError: 読み込んだJSONが辞書形式でない場合。
+            KeyError: 必要なセクション（階層構造）がJSON内に存在しない場合。
         """
-        if not self.__file__.exists():  # type: ignore
+        if not (file := self.__file__).exists():
             return
-        kwargs["file"] = self.__file__
-        try:
-            jsn = load_json(**kwargs)
-        except:
-            return
+        kwargs["file"] = file
+        jsn = load_json(**kwargs)
         if not isinstance(jsn, dict):
-            msg = f'"{self.__file__}"は対応していない形式です。'
+            msg = f"'{file}'は対応していない形式です。"
             raise TypeError(msg)
         for key, places in self.key_place_cm.items():
             d = jsn
@@ -188,32 +227,23 @@ class BaseCM(metaclass=__MetaCM):
                 for p in places:
                     if (d := d.get(p, OtsuNone)) is OtsuNone:
                         jsctn = "->".join(places)
-                        msg = f"{jsctn}が発見できませんでした。{self.__file__}が正しい形式の設定ファイル化確認してください。"
+                        msg = f"{jsctn}が発見できませんでした。'{file}'が正しい形式の設定ファイルか確認してください。"
                         raise KeyError(msg)
             if (dk := d.get(key, OtsuNone)) is OtsuNone:
                 continue
             setattr(self, key, dk)
 
     def save_cm(self, export_default_config: bool = False, **kwargs) -> None:
-        """設定ファイルを書き出す。
-
-        キーワード引数にはjson.dumpで使用できる引数を与えることができます。
-        一部引数は指定しなかった場合以下の値が使用されます。
-        またfpはself.__file__固定になります。
-
-        indent: 4
-        encoding: utf-8
-        ensure_ascii: False
-        default: support_json_dump
-        sort_keys: True
+        """現在の設定状況をJSONファイルとして保存します。
 
         Args:
-            export_default_config (bool, optional): 設定ファイルを書き出す際、デフォルトと同じ値も書き出すかどうか。 Defaults to False.
+            export_default_config: デフォルト値と同じ設定もファイルに書き出すかどうか。
+            **kwargs: save_jsonに引き渡すオプション引数。
         """
         user = self.user_cm(export_default_config)
-        kwargs["file"] = self.__file__
         kwargs["data"] = user
         set_kwargs = (
+            ("file", self.__file__),
             ("indent", 4),
             ("ensure_ascii", False),
             ("default", support_json_dump),
@@ -225,32 +255,38 @@ class BaseCM(metaclass=__MetaCM):
         save_json(**kwargs)
 
     def reset_cm(self) -> None:
-        """各属性を初期値に戻します。"""
-        dflt = lambda x: f"default_{x}_cm"
+        """すべての設定属性を定義時の初期値（デフォルト値）へとリセットします。"""
+
+        def get_dflt(x: str) -> str:
+            return f"default_{x}_cm"
+
         for key in self.attributes_cm:
-            setattr(self, key, getattr(self, dflt(key)))
+            setattr(self, key, getattr(self, get_dflt(key)))
 
     def defaults_cm(self) -> dict[str, Any]:
-        """各属性の初期値の辞書を返す。
+        """設定されているデフォルト値辞書のディープコピーを取得します。
 
         Returns:
-            dict[str, Any]: 各属性の初期値の辞書。
+            dict[str, Any]: デフォルト設定の辞書。
         """
-        return copy.deepcopy(self.__defaults__)
+        return copy.deepcopy(getattr(self, "__defaults__", {}))
 
     def user_cm(self, include_default_config: bool = False) -> dict[str, Any]:
-        """ユーザが設定した属性の辞書を返す。
+        """ユーザーによって変更された設定項目の辞書構造を取得します。
 
         Args:
-            include_default_config (bool, optional): デフォルト値と同じ値も含めるか。 Defaults to False.
+            include_default_config: デフォルト値のままの項目も含めて抽出するかどうか。
 
         Returns:
-            dict[str, Any]: ユーザが設定した属性の辞書。
+            dict[str, Any]: 階層構造が維持された設定値辞書。
         """
-        user: dict = self.__user__
+        user = self.__user__
         kp = self.key_place_cm
         ho = getattr(self, "__hidden_options__", OtsuNone)
-        checker = lambda x: x in ho if ho is not OtsuNone else False
+
+        def checker(x) -> bool:
+            return x in ho if ho is not OtsuNone else False
+
         for k in self.attributes_cm:
             uv = getattr(self, k)
             dv = getattr(self, f"default_{k}_cm")

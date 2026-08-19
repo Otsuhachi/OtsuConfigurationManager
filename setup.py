@@ -1,11 +1,11 @@
 from setuptools import find_packages, setup
 
-with open("README.md", "r", encoding="utf-8") as f:
+with open("README.md", encoding="utf-8") as f:
     readme = f.read()
-with open("LICENSE.txt", "r", encoding="utf-8") as f:
+with open("LICENSE.txt", encoding="utf-8") as f:
     lcs = f.read()
 
-__VERSION__ = "1.4.0.312"
+__VERSION__ = "1.4.1.312"
 
 setup(
     name="otsucfgmng",

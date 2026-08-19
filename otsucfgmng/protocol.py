@@ -1,106 +1,140 @@
+__all__ = (
+    "PBaseCM",
+    "PSupportJsonDump",
+)
+
+
 from typing import Any, NoReturn, Protocol, Self
 
-from otsutil import pathLike
+from otsutil import StrPath
 
 
 class PBaseCM(Protocol):
-    """設定ファイル管理クラス用の基底クラス。
+    """設定管理クラス（BaseCM）のインターフェースを定義するプロトコル。
 
-    このクラスを継承したクラスに__defaults__, <attribute>を定義するだけで、設定ファイルの読み書きに必要な処理を行えるようになります。
-
-    拡張子に制約はありませんが、読み込んだ際に辞書形式のjsonである必要があります。
+    Args:
+        file: 設定ファイルの保存先パス。
+        export_default_config: コンテキスト終了時にデフォルト設定も出力するかどうか。
     """
 
-    def __init__(self, file: pathLike, export_default_config: bool = False) -> None:
-        """設定ファイルを指定して扱えるようにする。
+    def __init__(self, file: StrPath, export_default_config: bool = False) -> None: ...
 
-        Args:
-            file (pathLike): 設定ファイルのパス。
-            export_default_config (bool, optional): 設定ファイルを書き出す際、デフォルトと同じ値も書き出すかどうか。 Defaults to False.
+    def __enter__(self) -> Self:
+        """コンテキストマネージャの開始処理。
+
+        Returns:
+            Self: 自身のインスタンス。
         """
         ...
 
-    def __enter__(self) -> Self: ...
+    def __exit__(self, *ex) -> bool:
+        """コンテキストマネージャの終了処理。スコープ脱出時に自動で設定を保存します。
 
-    def __exit__(self, *ex) -> bool: ...
+        Args:
+            *ex: 例外情報。
 
-    def __getattr__(self, key: str) -> NoReturn: ...
+        Returns:
+            bool: 例外を抑制する場合はTrue、それ以外はFalse。
+        """
+        ...
 
-    def __setattr__(self, name: str, value: Any) -> None: ...
+    def __getattr__(self, key: str) -> NoReturn:
+        """未定義属性へのアクセス時に呼び出されます。
+
+        Args:
+            key: 属性名。
+
+        Returns:
+            NoReturn: 常にAttributeErrorを発生させます。
+        """
+        ...
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """属性値の設定時に呼び出されます。
+
+        Args:
+            name: 属性名。
+            value: 設定する値。
+        """
+        ...
 
     @property
     def attributes_cm(self) -> set[str]:
-        """クラス定義の属性名セット。"""
+        """設定項目として定義されている属性名の集合を取得します。
+
+        Returns:
+            set[str]: 属性名のセット。
+        """
         ...
 
     @property
     def key_place_cm(self) -> dict[str, list[str] | None]:
-        """各属性の保存先を記録する辞書。"""
-        ...
-
-    def cfg_to_str_cm(self, all: bool = False) -> str:
-        """設定をjson.dumpsして返す。
-
-        self.__hidden_options__に登録されている属性はユーザが変更している場合のみ表示されます。
-
-        allが有効の場合、defaults, userという二つのセクションからなる辞書として扱われます。
-
-        Args:
-            all (bool, optional): 標準設定を含めるか。 Defaults to False.
+        """各設定属性の辞書内における階層構造（キーの配置）を取得します。
 
         Returns:
-            str: 設定の文字列。
+            dict[str, list[str] | None]: 属性名をキー、階層パスのリスト（またはNone）を値とする辞書。
+        """
+        ...
+
+    def cfg_to_str_cm(self, all_: bool = False) -> str:
+        """現在の設定内容をJSON形式の文字列に変換します。
+
+        Args:
+            all_: Trueの場合、デフォルト値とユーザー設定値の両方を含めた文字列を生成します。
+
+        Returns:
+            str: JSONフォーマットされた設定文字列。
         """
         ...
 
     def load_cm(self, **kwargs) -> None:
-        """設定ファイルを読み込む。
+        """設定ファイルから設定値を読み込みます。
 
-        読み込んだ設定を基にインスタンスの属性を更新します。
-
-        Raises:
-            TypeError: self.__file__が辞書形式のjsonでない場合。
-            KeyError: 必要な階層が存在しない場合。
+        Args:
+            **kwargs: load_jsonに渡す追加の引数。
         """
         ...
 
     def save_cm(self, export_default_config: bool = False, **kwargs) -> None:
-        """設定ファイルを書き出す。
-
-        キーワード引数にはjson.dumpで使用できる引数を与えることができます。
-        一部引数は指定しなかった場合以下の値が使用されます。
-        またfpはself.__file__固定になります。
-
-        indent: 4
-        encoding: utf-8
-        ensure_ascii: False
-        default: support_json_dump
-        sort_keys: True
+        """現在の設定値をファイルに保存します。
 
         Args:
-            export_default_config (bool, optional): 設定ファイルを書き出す際、デフォルトと同じ値も書き出すかどうか。 Defaults to False.
+            export_default_config: デフォルト値と同じ設定も出力に含めるかどうか。
+            **kwargs: save_jsonに渡す追加の引数。
         """
         ...
 
     def reset_cm(self) -> None:
-        """各属性を初期値に戻します。"""
+        """すべての設定項目を初期値（デフォルト値）に戻します。"""
         ...
 
     def defaults_cm(self) -> dict[str, Any]:
-        """各属性の初期値の辞書を返す。
+        """定義されている初期値（デフォルト設定）の辞書を取得します。
 
         Returns:
-            dict[str, Any]: 各属性の初期値の辞書。
+            dict[str, Any]: デフォルト設定の辞書。
         """
         ...
 
     def user_cm(self, include_default_config: bool = False) -> dict[str, Any]:
-        """ユーザが設定した属性の辞書を返す。
+        """ユーザーによって変更された設定値の辞書を取得します。
 
         Args:
-            include_default_config (bool, optional): デフォルト値と同じ値も含めるか。 Defaults to False.
+            include_default_config: 変更されていない初期値も含めるかどうか。
 
         Returns:
-            dict[str, Any]: ユーザが設定した属性の辞書。
+            dict[str, Any]: ユーザー設定値の辞書。
+        """
+        ...
+
+
+class PSupportJsonDump(Protocol):
+    """JSONシリアライズに対応したオブジェクトのプロトコル。"""
+
+    def to_json(self) -> Any:
+        """オブジェクトをJSONシリアライズ可能な表現に変換します。
+
+        Returns:
+            Any: JSONシリアライズ可能な値。
         """
         ...
