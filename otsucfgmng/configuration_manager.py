@@ -233,13 +233,15 @@ class BaseCM(metaclass=__MetaCM):
                 continue
             setattr(self, key, dk)
 
-    def save_cm(self, export_default_config: bool = False, **kwargs) -> None:
+    def save_cm(self, export_default_config: bool | None = None, **kwargs) -> None:
         """現在の設定状況をJSONファイルとして保存します。
 
         Args:
             export_default_config: デフォルト値と同じ設定もファイルに書き出すかどうか。
             **kwargs: save_jsonに引き渡すオプション引数。
         """
+        if export_default_config is None:
+            export_default_config = self.__export_default_config__
         user = self.user_cm(export_default_config)
         kwargs["data"] = user
         set_kwargs = (

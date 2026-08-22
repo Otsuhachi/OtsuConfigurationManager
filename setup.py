@@ -5,7 +5,7 @@ with open("README.md", encoding="utf-8") as f:
 with open("LICENSE.txt", encoding="utf-8") as f:
     lcs = f.read()
 
-__VERSION__ = "1.4.1.312"
+__VERSION__ = "1.4.2.312"
 
 setup(
     name="otsucfgmng",
