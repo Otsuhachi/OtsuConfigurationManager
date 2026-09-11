@@ -6,9 +6,8 @@ import json
 from pathlib import Path
 from typing import Any, NoReturn, Self
 
-from otsuvalidator import CPath, VBool, VTuple
-
 from otsutil import OtsuNone, StrPath, load_json, save_json
+from otsuvalidator import CPath, VBool, VTuple
 
 from .funcs import get_dict_keys_places, support_json_dump
 
@@ -24,7 +23,7 @@ class __MetaCM(type):
             "__doc__",
         }
         attr_keys = set(attrs.keys()) - excludes
-        if isinstance(dflt := attrs.get("__defaults__", None), dict):
+        if isinstance(dflt := attrs.get("__defaults__"), dict):
             kp = {}
             for k, _, places in get_dict_keys_places(dflt):
                 if k not in attr_keys:
@@ -104,9 +103,7 @@ class BaseCM(metaclass=__MetaCM):
         """
         try:
             self.save_cm(self.__export_default_config__)
-            if any(ex):
-                return False
-            return True
+            return not any(ex)
         except Exception:
             return False
 

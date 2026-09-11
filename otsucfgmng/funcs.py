@@ -28,9 +28,9 @@ def get_dict_keys_places(
     position = position or []
     for k, v in dict_.items():
         if isinstance(v, dict):
-            yield from get_dict_keys_places(v, position=position + [k])
+            yield from get_dict_keys_places(v, position=[*position, k])
         else:
-            yield (k, v, position if position else None)
+            yield (k, v, position or None)
 
 
 def is_support_json_dump(value: Any) -> TypeGuard[PSupportJsonDump]:

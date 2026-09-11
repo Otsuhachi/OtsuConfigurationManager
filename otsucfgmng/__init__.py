@@ -1,4 +1,8 @@
+__VERSION__ = "1.4.3.312"
+
+
 __all__ = (
+    "__VERSION__",
     "BaseCM",
     "PBaseCM",
     "PSupportJsonDump",

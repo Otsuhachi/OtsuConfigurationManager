@@ -1,11 +1,25 @@
+import re
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
-with open("README.md", encoding="utf-8") as f:
+pd_this = Path(__file__).parent
+
+with (pd_this / "README.md").open("r", encoding="utf-8") as f:
     readme = f.read()
-with open("LICENSE.txt", encoding="utf-8") as f:
+
+with (pd_this / "LICENSE.txt").open("r", encoding="utf-8") as f:
     lcs = f.read()
 
-__VERSION__ = "1.4.2.312"
+with (pd_this / "otsucfgmng/__init__.py").open("r", encoding="utf-8") as f:
+    for line in (ln.rstrip() for ln in f):
+        if (find := re.fullmatch(r'__VERSION__ = "([^"]+)"', line)) is None:
+            continue
+        __VERSION__ = find.groups()[0]
+        break
+    else:
+        msg = "`otsucfgmng`バージョン情報を取得できませんでした。"
+        raise ValueError(msg)
 
 setup(
     name="otsucfgmng",
@@ -16,7 +30,7 @@ setup(
     long_description=readme,
     author="Otsuhachi",
     author_email="agequodagis.tufuiegoeris@gmail.com",
-    packages=find_packages(),
+    packages=find_packages(where=".", include=["otsucfgmng*"]),
     include_package_data=True,
     license=lcs,
     keywords="Python ConfigurationManager Configure json",

@@ -18,21 +18,21 @@
     "default": {
         "otsutil": {
             "hashes": [
-                "sha256:1ba50b91ac00872e7f105d5dd7b05e0066ffde531df7e2e98b68b796d11d4a20",
-                "sha256:3105761c6a4ac51552818ee9e339a471a7a7e4c2133de6949af9c100b45b3fff"
+                "sha256:47ef4079eb511f6c8e851dbb2de5e16413494dffdf35d24e62a08806ea2d95b2",
+                "sha256:af15e0d14c88200affe06ba6b281a9470fa3e60c59db848978f8b87e472508b1"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.12'",
-            "version": "==1.3.0.312"
+            "version": "==1.3.2.312"
         },
         "otsuvalidator": {
             "hashes": [
-                "sha256:dbd0606bf615017b1962b82a3e280e64ab515526b4dfb402052c971c4157deb9",
-                "sha256:f14470332d196155846868222e0f3e6cb812b81c01121214f4347de32ea385f3"
+                "sha256:aebbd2add628792ff1c240b91da0a8dcb8388641578026c5eb2dbd2cf72b4f7b",
+                "sha256:fe398513e95b02d4305f0c5ee8f2170c328f3b97f36ced98cd62f3ad5b94a52d"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.12'",
-            "version": "==1.1.1.312"
+            "version": "==1.1.2.312"
         }
     },
     "develop": {
