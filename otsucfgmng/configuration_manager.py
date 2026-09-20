@@ -1,4 +1,4 @@
-__all__ = ("BaseCM",)
+__all__ = ["BaseCM"]
 
 
 import copy
@@ -21,6 +21,8 @@ class __MetaCM(type):
             "__hidden_options__",
             "__annotations__",
             "__doc__",
+            "__static_attributes__",
+            "__firstlineno__",
         }
         attr_keys = set(attrs.keys()) - excludes
         if isinstance(dflt := attrs.get("__defaults__"), dict):

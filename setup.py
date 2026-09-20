@@ -38,5 +38,5 @@ setup(
         "otsuvalidator",
         "otsutil",
     ],
-    python_requires=">=3.12",
+    python_requires=">=3.13",
 )

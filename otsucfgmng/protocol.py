@@ -1,7 +1,7 @@
-__all__ = (
+__all__ = [
     "PBaseCM",
     "PSupportJsonDump",
-)
+]
 
 
 from typing import Any, NoReturn, Protocol, Self

@@ -1,7 +1,7 @@
-__VERSION__ = "1.4.3.312"
+__VERSION__ = "1.4.4.313"
 
 
-__all__ = (
+__all__ = [
     "__VERSION__",
     "BaseCM",
     "PBaseCM",
@@ -9,7 +9,7 @@ __all__ = (
     "get_dict_keys_places",
     "is_support_json_dump",
     "support_json_dump",
-)
+]
 
 
 from .configuration_manager import BaseCM

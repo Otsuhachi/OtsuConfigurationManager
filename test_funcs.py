@@ -52,7 +52,7 @@ class TestCase(unittest.TestCase):
         pass
 
     def test_get_dict_keys_places(self) -> None:
-        returns = [x for x in get_dict_keys_places(sample_dict1)]
+        returns = list(get_dict_keys_places(sample_dict1))
         expect = [
             ("name", "Otsuhachi", None),
             ("age", 28, ["data"]),

@@ -1,11 +1,11 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "47b81d6b2b116a7d82607f25e62811d0a0d67a2e7867aea9215f7faba190d4c6"
+            "sha256": "56089b20ac369089756b80ba4edd56ab3bd4d5e0b79379b449f6faf7b56ed445"
         },
         "pipfile-spec": 6,
         "requires": {
-            "python_version": "3.12"
+            "python_version": "3.13"
         },
         "sources": [
             {
@@ -18,12 +18,12 @@
     "default": {
         "otsutil": {
             "hashes": [
-                "sha256:47ef4079eb511f6c8e851dbb2de5e16413494dffdf35d24e62a08806ea2d95b2",
-                "sha256:af15e0d14c88200affe06ba6b281a9470fa3e60c59db848978f8b87e472508b1"
+                "sha256:4175d47d39f69f696f80dccb814b416169becfb3657fb6fa2ec50e198e96932b",
+                "sha256:cc49a563d08ce0fe920246fb858d977292b3eb13689b689341fe3d4bd2f8fced"
             ],
             "index": "pypi",
-            "markers": "python_version >= '3.12'",
-            "version": "==1.3.2.312"
+            "markers": "python_version >= '3.13'",
+            "version": "==1.3.4.313"
         },
         "otsuvalidator": {
             "hashes": [
@@ -35,15 +35,5 @@
             "version": "==1.1.2.312"
         }
     },
-    "develop": {
-        "setuptools": {
-            "hashes": [
-                "sha256:51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670",
-                "sha256:f4695c21257f0d9b537ec2692c941d02ee143b7cc1276941349a546573b2ef73"
-            ],
-            "index": "pypi",
-            "markers": "python_version >= '3.10'",
-            "version": "==84.0.0"
-        }
-    }
+    "develop": {}
 }

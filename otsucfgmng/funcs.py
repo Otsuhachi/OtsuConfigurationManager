@@ -1,8 +1,8 @@
-__all__ = (
+__all__ = [
     "get_dict_keys_places",
     "is_support_json_dump",
     "support_json_dump",
-)
+]
 
 
 from collections.abc import Iterator

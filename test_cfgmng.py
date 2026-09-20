@@ -3,10 +3,9 @@ import unittest
 from pathlib import Path
 from typing import cast
 
-from otsuvalidator import CBool, CInt, CPath, CString, VChoice
-
 from otsucfgmng import BaseCM
 from otsutil import load_json
+from otsuvalidator import CBool, CInt, CPath, CString, VChoice
 
 
 class SampleConfig(BaseCM):
