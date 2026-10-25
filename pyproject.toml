@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "otsucfgmng"
+dynamic = ["version"]
+description = "設定ファイルを扱うクラスを生成するライブラリです。"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [{ name = "Otsuhachi", email = "agequodagis.tufuiegoeris@gmail.com" }]
+license = { file = "LICENSE.txt" }
+keywords = ["Python", "ConfigurationManager", "Configure", "json"]
+classifiers = [
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = ["otsutil", "otsuvalidator"]
+
+[tool.hatch.version]
+path = "otsucfgmng/__init__.py"

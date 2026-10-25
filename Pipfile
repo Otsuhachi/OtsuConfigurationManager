@@ -11,3 +11,7 @@ otsuvalidator = "*"
 
 [requires]
 python_version = "3.13"
+
+[scripts]
+reset = "pwsh -Command Remove-Item .venv -Force -Recurse && py -m pipenv update -d"
+test = "pwsh -Command py -m unittest discover -s tests -p \"test_*.py\" -v"

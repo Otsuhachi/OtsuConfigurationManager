@@ -1,8 +1,6 @@
-__all__ = ["BaseCM"]
-
-
 import copy
 import json
+import logging
 from pathlib import Path
 from typing import Any, NoReturn, Self
 
@@ -10,6 +8,11 @@ from otsutil import OtsuNone, StrPath, load_json, save_json
 from otsuvalidator import CPath, VBool, VTuple
 
 from .funcs import get_dict_keys_places, support_json_dump
+
+__all__ = ["BaseCM"]
+
+
+logger = logging.getLogger(__name__)
 
 
 class __MetaCM(type):
@@ -29,15 +32,19 @@ class __MetaCM(type):
             kp = {}
             for k, _, places in get_dict_keys_places(dflt):
                 if k not in attr_keys:
-                    msg = f"'{k}'属性は宣言されていません。"
+                    msg = f"`{k}`属性は宣言されていません。"
+                    logger.error(msg)
                     raise AttributeError(msg)
                 if kp.get(k, OtsuNone) is not OtsuNone:
-                    msg = f"'{k}'属性は異なるセクションで宣言されています。"
+                    msg = f"`{k}`属性は異なるセクションで宣言されています。"
+                    logger.error(msg)
                     raise AttributeError(msg)
                 kp[k] = places
             if undefined := attr_keys - set(kp.keys()):
                 msg = "属性の初期値が設定されていません（{}）".format(", ".join(undefined))
-                raise AttributeError(msg)
+                msg = "属性の初期値が正常に設定されていません"
+                logger.error(f"{msg}: {', '.join(undefined)}")
+                raise AttributeError(f"{msg}。")
             attrs["__attr_keys__"] = attr_keys
             attrs["__key_place__"] = kp
         return super().__new__(cls, name, bases, attrs)
@@ -121,7 +128,8 @@ class BaseCM(metaclass=__MetaCM):
         Raises:
             AttributeError: 指定された属性が存在しない場合。
         """
-        msg = f"'{key}'属性は存在しません。"
+        msg = f"`{key}`属性は存在しません。"
+        logger.error(msg)
         raise AttributeError(msg)
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -140,10 +148,12 @@ class BaseCM(metaclass=__MetaCM):
             n_str = "_".join(n)
             if getattr(self, n_str, OtsuNone) is not OtsuNone:
                 if self.__dict__.get(name, OtsuNone) is not OtsuNone:
-                    msg = f"'{name}'属性は上書きできません。"
+                    msg = f"`{name}`属性は上書きできません。"
+                    logger.error(msg)
                     raise AttributeError(msg)
             else:
-                msg = f"'{n_str}'属性が存在しないため、その初期値を表す'{name}'属性も存在しません。"
+                msg = f"`{n_str}`属性が存在しないため、その初期値を表す`{name}`属性も存在しません。"
+                logger.error(msg)
                 raise AttributeError(msg)
         super().__setattr__(name, value)
 
@@ -218,16 +228,18 @@ class BaseCM(metaclass=__MetaCM):
         kwargs["file"] = file
         jsn = load_json(**kwargs)
         if not isinstance(jsn, dict):
-            msg = f"'{file}'は対応していない形式です。"
-            raise TypeError(msg)
+            msg = "対応していない形式のファイルです"
+            logger.error(f"{msg}: {file}")
+            raise TypeError(f"{msg}。")
         for key, places in self.key_place_cm.items():
             d = jsn
             if places is not None:
                 for p in places:
                     if (d := d.get(p, OtsuNone)) is OtsuNone:
                         jsctn = "->".join(places)
-                        msg = f"{jsctn}が発見できませんでした。'{file}'が正しい形式の設定ファイルか確認してください。"
-                        raise KeyError(msg)
+                        msg = f"`{jsctn}`が発見できませんでした。正しい形式の設定ファイルか確認してください"
+                        logger.error(f"{msg}: {file}")
+                        raise KeyError(f"{msg}。")
             if (dk := d.get(key, OtsuNone)) is OtsuNone:
                 continue
             setattr(self, key, dk)

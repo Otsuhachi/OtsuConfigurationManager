@@ -1,16 +1,4 @@
-__VERSION__ = "1.4.4.313"
-
-
-__all__ = [
-    "__VERSION__",
-    "BaseCM",
-    "PBaseCM",
-    "PSupportJsonDump",
-    "get_dict_keys_places",
-    "is_support_json_dump",
-    "support_json_dump",
-]
-
+import logging
 
 from .configuration_manager import BaseCM
 from .funcs import (
@@ -22,3 +10,19 @@ from .protocol import (
     PBaseCM,
     PSupportJsonDump,
 )
+
+__all__ = [
+    "BaseCM",
+    "PBaseCM",
+    "PSupportJsonDump",
+    "__version__",
+    "get_dict_keys_places",
+    "is_support_json_dump",
+    "support_json_dump",
+]
+
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+
+
+__version__ = "2.0.0"

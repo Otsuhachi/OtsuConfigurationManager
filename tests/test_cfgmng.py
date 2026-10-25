@@ -75,7 +75,7 @@ class TestCase(unittest.TestCase):
     def test_library(self) -> None:
         cm = SampleConfig(self.file)
         self.assertEqual(str(cm.library.relative_to("./")), "SampleLibrary.dll")
-        with self.assertRaisesRegex(ValueError, "'library'の拡張子は.dllのいずれかである必要があります"):
+        with self.assertRaisesRegex(ValueError, "`library`の拡張子は.dllのいずれかである必要があります"):
             cm.library = "./dll/TestLibrary.d"
         cm.library = cast("Path", "./dll/TestLibrary.dll")
         self.assertEqual(str(cm.library.relative_to("./")), "dll\\TestLibrary.dll")
@@ -195,11 +195,11 @@ class TestCase(unittest.TestCase):
         self.assertEqual(str(cm.default_library_cm), "SampleLibrary.dll")
 
         # 上書き禁止のテスト
-        with self.assertRaisesRegex(AttributeError, "'default_bgm_cm'属性は上書きできません"):
+        with self.assertRaisesRegex(AttributeError, "`default_bgm_cm`属性は上書きできません"):
             cm.default_bgm_cm = 50
 
         # 存在しないdefault_xxx_cmへのアクセス
-        with self.assertRaisesRegex(AttributeError, "'dummy'属性が存在しないため、その初期値を表す'default_dummy_cm'属性も存在しません"):
+        with self.assertRaisesRegex(AttributeError, "`dummy`属性が存在しないため、その初期値を表す`default_dummy_cm`属性も存在しません"):
             cm.default_dummy_cm = 10
 
     def test_reset_cm(self) -> None:
