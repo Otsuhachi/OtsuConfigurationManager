@@ -118,7 +118,7 @@ class TestCase(unittest.TestCase):
 
         self.delete_file()
         self.check_not_exists()
-        # with文利用＆デフォルト設定を出力しない
+        # with文利用 & デフォルト設定を出力しない
         expect_cfg = {
             "app": {
                 "library": "dll\\TestLibrary.dll",
@@ -245,7 +245,7 @@ class TestCase(unittest.TestCase):
         }
         self.assertEqual(dflt, expect)
 
-        # copy.deepcopyで返されているかの確認（元の__defaults__が汚染されていないか）
+        # copy.deepcopyで返されているかの確認(元の__defaults__が汚染されていないか)
         dflt["other"]["audio"]["bgm"] = 50
         self.assertEqual(cm.default_bgm_cm, 100)
         self.assertNotEqual(cm.defaults_cm()["other"]["audio"]["bgm"], dflt["other"]["audio"]["bgm"])

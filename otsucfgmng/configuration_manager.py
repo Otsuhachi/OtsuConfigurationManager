@@ -1,6 +1,7 @@
 import copy
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any, NoReturn, Self
 
@@ -129,7 +130,9 @@ class BaseCM(metaclass=__MetaCM):
             AttributeError: 指定された属性が存在しない場合。
         """
         msg = f"`{key}`属性は存在しません。"
-        logger.error(msg)
+        # __hidden_options__が未設定の場合存在しないキー
+        if re.fullmatch(r"_{2,3}hidden_options__", key) is None:
+            logger.error(msg)
         raise AttributeError(msg)
 
     def __setattr__(self, name: str, value: Any) -> None:
